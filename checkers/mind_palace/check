@@ -1,0 +1,147 @@
+#!/usr/local/bin/python3.6
+
+import requests
+from sys import argv
+from json import loads
+from random import choice
+from string import ascii_lowercase, ascii_uppercase, ascii_letters
+
+PORT = "13452"
+generate_text = ascii_uppercase + ascii_letters + ascii_lowercase
+
+
+def check(hostname):
+    try:
+        r = requests.get('http://%s:%s' % (hostname, PORT))
+
+        if 'test' not in r.text:
+            print("I need 'Capture the flag'!")
+            return(104)
+
+        print("Ok")
+        return(101)
+    except:
+        print("Host unreachable!")
+        return(104)
+
+
+def put(hostname, uid, flag):
+    try:
+        login = uid # ''.join(choice(generate_text) for _ in range(10))
+        password = uid # ''.join(choice(generate_text) for _ in range(10))
+        url = "http://{host}:{port}/auth?login={login}&password={password}".format(
+            host=hostname,
+            port=PORT,
+            login=login,
+            password=password)
+        print(url)
+        token = requests.get(url).text
+        token = loads(token)[0]['token']
+        print(token)
+        think = {
+            'think': flag,
+            'sorted': 1,
+            'status': 0,
+            'gravity': 1
+        }
+        id_think = requests.get(
+            "http://{host}:{port}/think?op=insert&token={token}&data={data}".format(
+                host=hostname,
+                port=PORT,
+                token=token,
+                data=think).replace('\'', '%22')).text
+        id_think = loads(id_think)['id_think']
+        print(id_think)
+
+        wh = {
+            'name': 'test_wh'
+        }
+        id_wh = requests.get(
+            "http://{host}:{port}/wh?op=insert&token={token}&data={data}".format(
+                host=hostname,
+                port=PORT,
+                token=token,
+                data=wh).replace('\'', '%22')).text
+        id_wh = loads(id_wh)['id_wh']
+        print(id_wh)
+
+        wh_card = {
+            'id_think': id_think,
+            'id_wh': id_wh,
+            'price': 1
+        }
+        d = requests.get(
+            "http://{host}:{port}/wh_card?op=insert&token={token}&data={data}".format(
+                host=hostname,
+                port=PORT,
+                token=token,
+                data=wh_card).replace('\'', '%22')).text
+
+        return(101)
+    except:
+        print("Host unreachable!")
+        return(104)
+
+
+def get(hostname, uid, flag):
+    try:
+        login = uid  # ''.join(choice(generate_text) for _ in range(10))
+        password = uid  # ''.join(choice(generate_text) for _ in range(10))
+        token = requests.get(
+            "http://{host}:{port}/auth?login={login}&password={password}".format(
+                host=hostname,
+                port=PORT,
+                login=login,
+                password=password)).text
+        token = loads(token)[0]['token']
+        print(token)
+        you = requests.get(
+            "http://{host}:{port}/think?op=thinks&token={token}".format(
+                host=hostname,
+                port=PORT,
+                token=token)).text
+        id_think = loads(you)[0]['id_think']
+        print(id_think)
+        you = requests.get(
+            "http://{host}:{port}/wh?op=wh&token={token}".format(
+                host=hostname,
+                port=PORT,
+                token=token)).text
+        id_wh = loads(you)[0]['id_wh']
+        print(id_wh)
+        wh_card = {
+            'id_think': id_think,
+            'id_wh': id_wh,
+            'price': 1
+        }
+
+        data = requests.get(
+            "http://{host}:{port}/wh_card?op=one&token={token}&data={data}".format(
+                host=hostname,
+                port=PORT,
+                token=token,
+                data=wh_card).replace('\'', '%22')).text
+        print(data)
+        if flag in data:
+            print("Ok")
+            return(101)
+        else:
+            print("Flag is not found")
+            return(102)
+    except:
+        print("Error in getting the flag!")
+        return(104)
+
+
+if __name__ == '__main__':
+    if len(argv) > 1:
+        if argv[1] == "check":
+            if len(argv) > 2:
+                exit(check(argv[2]))
+        elif argv[1] == "put":
+            if len(argv) > 4:
+                exit(put(argv[2], argv[3], argv[4]))
+        elif argv[1] == "get":
+            if len(argv) > 4:
+                exit(get(argv[2], argv[3], argv[4]))
+exit(110)

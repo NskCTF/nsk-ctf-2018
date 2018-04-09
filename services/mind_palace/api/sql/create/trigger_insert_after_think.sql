@@ -1,0 +1,2 @@
+CREATE TRIGGER open_think BEFORE INSERT ON think
+    FOR EACH ROW EXECUTE PROCEDURE open_think();

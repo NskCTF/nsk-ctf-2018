@@ -1,0 +1,160 @@
+#!/usr/local/bin/python3.6
+
+import os
+import requests
+from sys import argv
+import random
+import json
+import socket
+from time import sleep
+
+names = ["daugherty", "willison", "longstaff", "hutchinson", "robb", "otway", "cave", "curle", "dew", "christopher", "cooper", "coupe", "yeo", "aldburgh", "atchison", "elphinstone", "jennison", "chamberlayne", "peach", "fairridge", "thornhill", "crouch", "wesley-pole", "slack", "delisle", "hufton", "wingo", "deyealand", "woodville", "forman", "penlington", "friend", "lyle", "temple", "ashbury", "hollingworth", "manini", "dehart", "parkerdd", "quixley", "hoks", "parke", "whittleor", "whittler", "hutley", "wingrove", "hopper", "mercer", "bulford", "rayning", "lanham", "tillotson", "perrin", "garsden", "marthwaite", "warner", "sedgwick", "macfarlane", "colver", "scane", "thakel", "thomkinson", "burks", "holby", "manson", "alverson", "hurley", "aques", "mathieson", "percy", "philips", "fitzhugh", "carrick", "harrand", "elvendorf", "mcnutt", "gulliver", "radcliffe", "billingham", "keeley", "renwick", "whineray", "cotes", "bradbury", "littlewood", "calvert", "tong", "brand", "footes", "pape", "woodall", "crowley", "silver", "hewson", "sambrook", "smyth", "smijth", "thurgats", "sellers", "hawton", "mcgibbon", "langham"]
+comments = ["Complain about health and flag", "My head is on fire and flag", "My eggs are boiling and flag", "Can you see this?", "Keep smoke and flag"]
+
+
+BUFFER_SIZE = 1024
+
+def randsleep():
+    sleep(round(random.uniform(0.1, 1.3), 2))
+
+def freg(s, user, card):
+    sleep(0.1)
+    data = s.recv(BUFFER_SIZE).decode("utf-8")
+    if "Welcome to our" not in data:
+        print("Can't see service dialog!")
+        exit(102)
+
+    randsleep()
+    s.send("USER {0}".format(user).encode("utf-8"))
+    randsleep()
+    s.send("ROOM {0}".format(card).encode("utf-8"))
+    sleep(0.1)
+    data = s.recv(BUFFER_SIZE).decode("utf-8")
+    # print(data)
+    if "Success! Now you can buy coffee" not in data:
+        print("Can't login!")
+        exit(102)
+
+    s.send("LIST".encode("utf-8"))
+    sleep(0.1)
+    data = s.recv(BUFFER_SIZE).decode("utf-8")
+    if "You don't have any orders" not in data:
+        print("Can't see service dialog!")
+        exit(102)
+
+def fmake(s, flag):
+    cmts = ["", ""]
+    for i in range(2):
+            s.send("MAKE".encode("utf-8"))
+            sleep(0.1)
+            data = s.recv(BUFFER_SIZE).decode("utf-8")
+            # print(data)
+            if "Please, add comment to your coffee" not in data:
+                print("Can't buy a coffee!")
+                exit(102)
+            cmts[i] = "{0} {1}".format(random.choice(comments), flag)
+            s.send(cmts[i].encode("utf-8"))
+            sleep(0.1)
+            data = s.recv(BUFFER_SIZE).decode("utf-8")
+            if "Done!" not in data:
+                print("Can't do a fluorography!")
+                exit(102)
+    return cmts
+
+def fcheck(s, cmts):
+    #print(cmts)
+    s.send("LIST".encode("utf-8"))
+    sleep(0.2)
+    data = s.recv(BUFFER_SIZE).decode("utf-8")
+    sleep(0.3)
+    if "Reading data from file" not in data:
+        print("Can't see list of orders!")
+        exit(103)
+    sleep(0.8)
+    # print(data)
+    for i in range(2):
+        s.send("TAKE {0}".format(i).encode("utf-8"))
+        sleep(0.1)
+        data = s.recv(BUFFER_SIZE) 
+        if cmts[i].encode("utf-8") not in data:
+            print("Can't find orders")
+            exit(103)
+        # else:
+            # print("KEK")
+        randsleep()
+
+def check(hostname):
+
+    try:
+        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        s.settimeout(20)
+        s.connect((hostname, 1234))
+        user = random.choice(names)
+        card  = str(random.randint(100000, 999999))
+        freg(s, user, card)
+
+        cmts = fmake(s, random.choice(comments))
+        fcheck(s, cmts)
+
+        s.close()
+        print("OK")
+        exit(101)
+    except Exception as ex:
+        s.close()
+        print(ex)
+        print("Host unreachable!")
+        return(104)
+
+def put(hostname, uid, flag):
+
+    try:
+        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        s.settimeout(20)
+        s.connect((hostname, 1234))
+        user = random.choice(names)
+        card  = str(random.randint(100000, 999999))
+        freg(s, user, card)
+        cmts = fmake(s, str(uid + " " + flag))
+        fcheck(s, cmts)
+        s.close()
+        print("OK")
+        exit(101)
+
+    except Exception as ex:
+        s.close()
+        print("Host unreachable!")
+        return(104)
+
+def get(hostname, uid, flag):
+
+    try:
+        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        s.settimeout(20)
+        s.connect((hostname, 1234))
+        user = random.choice(names)
+        card  = str(random.randint(100000, 999999))
+        freg(s, user, card)
+        cmts = fmake(s, random.choice(comments))
+        fcheck(s, cmts)
+        s.close()
+        print("OK")
+        exit(101)
+
+    except Exception as ex:
+        s.close()
+        print("Host unreachable!")
+        return(104)
+
+
+if __name__ == '__main__':
+    if len(argv) > 1:
+        if argv[1] == "check":
+            if len(argv) > 2:
+                exit(check(argv[2]))
+        elif argv[1] == "put":
+            if len(argv) > 4:
+                exit(put(argv[2], argv[3], argv[4]))
+        elif argv[1] == "get":
+            if len(argv) > 4:
+                exit(get(argv[2], argv[3], argv[4]))
+exit(110)

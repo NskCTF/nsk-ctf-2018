@@ -1,0 +1,140 @@
+#!/usr/local/bin/python3.6
+
+
+import socket
+from sys import argv
+PORT = 14901
+
+def check(hostname):
+    try:
+        conn = socket.socket()
+        conn.settimeout(0.1)
+        conn.connect((hostname, PORT))
+        data = conn.recv(1024)
+        if not data:
+            #print("No data")
+            conn.close()
+            return(104)
+        if data is not None:
+            print("OK")
+            conn.close()
+            return(101)
+        else:
+            conn.close()
+            #print("Error")
+            return(104)
+    except:
+        #print("Host unreachable!")
+        conn.close()
+        return(104)
+
+def put(hostname, uid, password, flag):
+    try:
+        conn = socket.socket()
+        conn.settimeout(0.1)
+        conn.connect((hostname, PORT))
+        data = conn.recv(1024)
+        #print(data)
+        if not data:
+            print("No data")
+            conn.close()
+            return(104)
+
+        #print(1)
+        #print(conn.recv(2048))
+        conn.send(b"1\n")
+        conn.recv(1024)
+        conn.send((str(uid)+"\n").encode("utf-8"))
+        conn.recv(1024)
+        conn.send(b"e756902993a3ce12c68f6c8a7b2fe34a\n")
+        conn.recv(1024)
+        conn.recv(1024)
+        conn.send(b"1\n")
+        data = conn.recv(1024)
+        #print(data)
+        if "successfully" in data.decode("utf-8").split():
+            print("OK")
+            conn.close()
+            return(101)
+        conn.send((str(password)+"\n").encode("utf-8"))
+        data = conn.recv(1024)
+
+        #print(data)
+        if "successfully" in data.decode("utf-8").split():
+            print("OK")
+            conn.close()
+            return(101)
+        conn.send((str(flag)+"\n").encode("utf-8"))
+        data = conn.recv(1024)
+
+        #print(data)
+        if "successfully" in data.decode("utf-8").split():
+            print("OK")
+            conn.close()
+            return(101)
+        conn.send("sadasdsad\n".encode("utf-8"))
+        data = conn.recv(1024)
+
+        #print(data)
+        if "successfully" in data.decode("utf-8").split():
+            print("OK")
+            conn.close()
+            return(101)
+        else:
+            print("Error in input flag")
+            conn.close()
+            return(103)
+    except:
+        print("Host unreachable!")
+        conn.close()
+        return(103)
+
+def get(hostname, uid, password, flag):
+    try:
+        conn = socket.socket()
+        conn.settimeout(0.1)
+        conn.connect((hostname, PORT))
+        data = conn.recv(1024)
+        if not data:
+            #print("No data")
+            conn.close()
+            return(104)
+        #conn.recv(1024)
+        conn.send(b"3\n")
+        conn.recv(1024)
+        conn.send(str(uid).encode("utf-8"))
+        data = conn.recv(1024)
+        if flag in data.decode("utf-8").split():
+            print("OK")
+            return(101)
+        conn.send(str(password).encode("utf-8"))
+        data = conn.recv(1024)
+        if flag in data.decode("utf-8").split():
+            print("OK")
+            return(101)
+        #print(data)
+        data = conn.recv(1024)
+        if flag in data.decode("utf-8").split():
+            print("OK")
+            return(101)
+        else:
+            #print("Flag is not found")
+            return(102)
+    except:
+        #print("Error in getting the flag!")
+        return(102)
+def godd():
+    return(101)
+
+if __name__ == '__main__':
+    if len(argv) > 1:
+        if argv[1] == "check":
+            if len(argv) > 2:
+                exit(check(argv[2]))
+        elif argv[1] == "put":
+            if len(argv) > 4:
+                exit(put(argv[2], argv[3], "1488", argv[4]))
+        elif argv[1] == "get":
+            if len(argv) > 4:
+                exit(get(argv[2], argv[3], "1488", argv[4]))
+exit(110)

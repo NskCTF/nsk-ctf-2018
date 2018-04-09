@@ -1,0 +1,58 @@
+version: '3'
+services:
+
+  pizza:
+    container_name: "pizza"
+    image: nginx:latest
+    ports:
+      - "13454:80"
+    volumes:
+      - ./pizza/php/nginx.conf:/etc/nginx/conf.d/default.conf
+      - ./pizza/src:/code
+    links:
+      - php
+
+  php:
+    build: ./php
+    volumes:
+      - ./pizza/src:/code
+    links:
+      - mysql
+
+  mysql:
+    image: mysql:latest
+    volumes:
+      - ./pizza/db/ctf.sql:/docker-entrypoint-initdb.d/dump.sql
+    environment:
+      MYSQL_ROOT_PASSWORD: secret
+      MYSQL_DATABASE: name_db
+      MYSQL_USER: nsk_ctf_p
+      MYSQL_PASSWORD: 8A2f7N7q
+
+  coffeemaker:
+    container_name: "coffeemaker"
+    ports:
+      - "1234:1234"
+    build: ./coffeemaker
+
+  allsafe:  
+    container_name: "allsafe"
+    ports:
+      - "14901:14901"
+    build: ./allsafe
+
+  db:
+    image: postgres
+    environment:
+        POSTGRES_USER: "NSK"
+        POSTGRES_PASSWORD: "NSK"
+        POSTGRES_DB: "NSK"
+        
+  mind_palace:
+    build: ./mind_palace
+    ports:
+      - "13452:13452"
+    depends_on:
+      - db
+    links:
+      - db

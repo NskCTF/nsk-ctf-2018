@@ -1,0 +1,118 @@
+#!/usr/local/bin/python3.6
+import os
+import requests
+import requests.utils
+import pickle
+import random
+import string
+from http.cookiejar import CookieJar
+from sys import argv
+
+PORT = "13454"
+FILE_PREFIX = "SESSION_OF_"
+HEADERS = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/65.0.3325.181 Safari/537.36'}
+
+def save_session(session, filename):
+    with open(filename, 'wb') as f:
+        #pickle.dump(json.dumps(session.cookies.get_dict()), f)
+        pickle.dump(session.cookies.get_dict(), f)
+def load_session(filename):
+    with open(filename, 'rb') as f:
+        #j = json.loads(pickle.load(f))
+        j = pickle.load(f)
+        session2 = requests.session()
+        session2.cookies.update(j)
+        return session2
+def randstr():
+    n = int(random.uniform(10, 50))
+    a = string.ascii_letters + string.digits
+    return(str(''.join([random.choice(a) for i in range(n)])))
+
+
+def check(hostname):
+    try:
+
+        r = requests.get('http://%s:%s' % (hostname, PORT), headers=HEADERS)
+
+        if '<title>' not in r.text:
+            print("I need 'Capture the flag'!")
+            return(104)
+
+        print("Ok")
+        return(101)
+    except:
+        print("Host unreachable!")
+        return(104)
+
+
+def put(hostname, uid, flag):
+    try:
+        url = 'http://%s:%s' % (hostname, PORT)
+        session = requests.session()
+        session.get(url + '/menu.php',headers=HEADERS)# делаем обычный запрос
+
+
+        print('get cookies = ')
+        print(session.cookies)
+
+
+        save_session(session,FILE_PREFIX+uid)# сохраняем сессию для последующих проверок фалага
+
+
+        data1 = {
+            'id':'2',
+            'quantity':'1',
+        }
+        data2 = {
+            'dstAccountId': randstr(),
+            'amonAcsdId':'Flag is {'+flag+'}',
+            'srcAccountId': randstr(),
+        }
+
+
+        session.post(url + '/cart.php',data=data1,headers=HEADERS)#добавляем товар для данной сессии
+        session.post(url + '/pay.php',data=data2,headers=HEADERS)#оформляем заказ
+
+        # if 'POST #' in r.text:
+        print("Ok")
+        return(101)
+        # else:
+            # print("'Ok' is not found!")
+            # return(104)
+    except:
+        print("Host unreachable!")
+        return(104)
+
+
+def get(hostname, uid, flag):
+    try:
+        session = load_session(FILE_PREFIX+uid)
+        r = session.get('http://%s:%s/my_orders.php' % (hostname, PORT),headers=HEADERS)
+
+        if flag in r.text:
+            print("Ok")
+            return(101)
+        else:
+            print("Flag is not found")
+            return(102)
+    except:
+        print("Error in getting the flag!")
+        return(104)
+
+
+
+
+
+
+if __name__ == '__main__':
+    if len(argv) > 1:
+        if argv[1] == "check":
+            if len(argv) > 2:
+                exit(check(argv[2]))
+        elif argv[1] == "put":
+            if len(argv) > 4:
+                exit(put(argv[2], argv[3], argv[4]))
+        elif argv[1] == "get":
+            if len(argv) > 4:
+                exit(get(argv[2], argv[3], argv[4]))
+exit(110)
